@@ -1,0 +1,1205 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111214">
+  <title>Colorit — Make your mark</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #ededeb;
+      --muted: #8d8f93;
+      --paper: #111214;
+      --gold: #b7a17b;
+      --gold-light: #35363a;
+      --green: #819879;
+      --shadow: 0 18px 48px rgb(0 0 0 / 24%);
+      font-family: "DM Sans", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background: var(--paper);
+    }
+
+    button, input { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+
+    .app {
+      width: min(1120px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 28px clamp(18px, 4vw, 48px) 36px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .brand {
+      margin: 4px 0 22px;
+      text-align: center;
+    }
+
+    h1, h2, p { margin-top: 0; }
+
+    h1 {
+      margin: 6px 0 0;
+      font-family: "DM Sans", sans-serif;
+      font-size: clamp(36px, 6vw, 54px);
+      font-weight: 600;
+      letter-spacing: -.055em;
+      line-height: 1.05;
+    }
+
+    .status-row {
+      width: min(100%, 900px);
+      min-height: 42px;
+      margin: 0 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: #c2c3c5;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #c9ab72;
+      box-shadow: 0 0 0 4px rgb(201 171 114 / 12%);
+    }
+
+    .status[data-state="connected"] .status-dot {
+      background: #83a879;
+      box-shadow: 0 0 0 4px rgb(131 168 121 / 12%);
+    }
+
+    .status[data-state="disconnected"] .status-dot {
+      background: #d27d70;
+      box-shadow: 0 0 0 4px rgb(210 125 112 / 12%);
+    }
+
+    .quiet-button, .icon-button, .primary-button, .secondary-button {
+      min-height: 42px;
+      border: 1px solid #393a3e;
+      border-radius: 0;
+      background: #1a1b1e;
+      color: #e6e5e2;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background .16s ease, transform .16s ease, box-shadow .16s ease;
+    }
+
+    .quiet-button {
+      padding: 0 15px;
+      font-size: 13px;
+    }
+
+    .quiet-button:hover, .icon-button:hover, .secondary-button:hover {
+      background: #252629;
+    }
+
+    button:active { transform: translateY(1px); }
+    button:focus-visible, input:focus-visible {
+      outline: 2px solid rgb(196 170 125 / 72%);
+      outline-offset: 3px;
+    }
+
+    .frame-shell {
+      width: min(100%, 900px);
+      padding: 7px;
+      border: 1px solid #38393d;
+      border-radius: 0;
+      background: #191a1c;
+      box-shadow: var(--shadow);
+    }
+
+    .frame-inner {
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: #191a1c;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #303135;
+      background: #17181a;
+      aspect-ratio: 3 / 2;
+      touch-action: none;
+    }
+
+    .canvas-wrap canvas {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      touch-action: none;
+    }
+
+    .canvas-wrap .territory-canvas { z-index: 0; }
+    .canvas-wrap .preview-canvas { z-index: 1; pointer-events: none; }
+
+    .host-layout {
+      width: min(100%, 900px);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 230px;
+      align-items: start;
+      gap: 20px;
+    }
+
+    .side-panel {
+      padding: 18px;
+      border: 1px solid #2c2d30;
+      border-radius: 0;
+      background: #191a1c;
+    }
+
+    .side-panel h2, .phone-panel h2 {
+      margin: 0 0 9px;
+      font-family: "DM Sans", sans-serif;
+      font-size: 19px;
+      font-weight: 600;
+    }
+
+    .side-panel p {
+      margin: 0 0 15px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    #qrcode {
+      width: 164px;
+      height: 164px;
+      margin: 0 auto 13px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border: 6px solid #fff;
+      border-radius: 0;
+      background: #fff;
+      box-shadow: 0 0 0 1px #35363a;
+    }
+
+    #qrcode img, #qrcode canvas { display: block; max-width: 100%; max-height: 100%; }
+
+    .join-link {
+      display: block;
+      overflow-wrap: anywhere;
+      color: #c4ae88;
+      font-size: 10px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .scoreboard {
+      width: min(100%, 900px);
+      margin: 20px 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 9px;
+    }
+
+    .player-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 13px;
+      border: 1px solid #303135;
+      border-radius: 0;
+      background: #191a1c;
+      color: #d5d5d3;
+      font-size: 12px;
+    }
+
+    .player-swatch {
+      width: 10px;
+      height: 10px;
+      flex: none;
+      border-radius: 50%;
+      background: var(--swatch);
+    }
+
+    .player-chip small { color: #929499; }
+
+    .phone-panel {
+      width: min(100%, 560px);
+      margin-top: 19px;
+      padding: 18px;
+      border: 1px solid #2c2d30;
+      border-radius: 0;
+      background: #191a1c;
+    }
+
+    .phone-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .color-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #c0c1c3;
+      font-size: 13px;
+    }
+
+    .color-label .player-swatch { width: 14px; height: 14px; }
+
+    .phone-controls {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px 14px;
+    }
+
+    .brush-control {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #a7a8ab;
+      font-size: 12px;
+    }
+
+    .brush-control strong {
+      color: #e0dfdc;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .zoom-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .icon-button {
+      width: 43px;
+      min-height: 43px;
+      padding: 0;
+      font-size: 20px;
+    }
+
+    .zoom-readout {
+      min-width: 44px;
+      color: #a1a2a5;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .secondary-button, .primary-button {
+      padding: 0 16px;
+      border-radius: 0;
+      font-size: 13px;
+    }
+
+    .primary-button {
+      border-color: #b9a17a;
+      background: #b9a17a;
+      color: #171614;
+      box-shadow: none;
+    }
+
+    .primary-button:hover { background: #c8b18b; }
+
+    .message {
+      min-height: 19px;
+      margin: 11px 0 0;
+      color: #a0a1a4;
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .message[data-kind="error"] { color: #e28b7e; }
+    [hidden] { display: none !important; }
+
+    .footer-note {
+      margin: auto 0 0;
+      padding-top: 26px;
+      color: #686a6e;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    @media (max-width: 700px) {
+      .app { padding: 18px 14px max(24px, env(safe-area-inset-bottom)); }
+      .brand { margin: 4px 0 17px; }
+      .status-row { margin-bottom: 13px; }
+      .frame-shell { padding: 8px; border-radius: 0; }
+      .frame-inner { padding: 0; }
+      .host-layout { grid-template-columns: 1fr; gap: 14px; }
+      .host-layout .side-panel { order: 2; }
+      .side-panel { padding: 15px; }
+      .host-layout #qrcode { width: 136px; height: 136px; }
+      .host-layout .side-panel p { margin-bottom: 11px; }
+      .phone-panel { margin-top: 14px; padding: 14px; }
+      .phone-controls { grid-template-columns: 1fr; gap: 13px; }
+      .zoom-controls { justify-content: center; }
+      .brush-control { font-size: 13px; }
+      .scoreboard { margin-top: 15px; gap: 7px; }
+      .player-chip { padding: 8px 10px; font-size: 11px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="brand">
+      <h1>Colorit</h1>
+    </header>
+
+    <div class="status-row">
+      <div class="status" id="connection-status" data-state="waiting" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="status-text">Waiting for the game to start…</span>
+      </div>
+      <button class="quiet-button" id="reconnect-button" type="button">Reconnect</button>
+    </div>
+
+    <section class="host-layout" id="host-view" hidden aria-label="Game board and join code">
+      <div class="frame-shell">
+        <div class="frame-inner">
+          <div class="canvas-wrap">
+            <canvas class="territory-canvas" id="host-canvas" width="1200" height="800" aria-label="Shared Colorit game board"></canvas>
+          </div>
+        </div>
+      </div>
+      <aside class="side-panel">
+        <h2>Join the canvas</h2>
+        <p>Scan this code with your phone to claim a color and start painting.</p>
+        <div id="qrcode" aria-label="QR code to join the game"></div>
+        <a class="join-link" id="join-link" href="#" hidden></a>
+        <p class="message" id="host-message" role="status"></p>
+      </aside>
+    </section>
+
+    <section class="phone-view" id="phone-view" hidden aria-label="Phone drawing controls">
+      <div class="frame-shell">
+        <div class="frame-inner">
+          <div class="canvas-wrap" id="phone-viewport">
+            <canvas class="territory-canvas" id="phone-canvas" width="1200" height="800" aria-label="Shared Colorit game board"></canvas>
+            <canvas class="preview-canvas" id="preview-canvas" width="1200" height="800" aria-hidden="true"></canvas>
+          </div>
+        </div>
+      </div>
+      <section class="phone-panel">
+        <div class="phone-info">
+          <h2>Your paint</h2>
+          <div class="color-label">
+            <span class="player-swatch" id="phone-swatch" style="--swatch:#bd744c"></span>
+            <span id="color-name">Choosing a color…</span>
+          </div>
+        </div>
+        <div class="phone-controls">
+          <div class="brush-control" aria-label="Fixed brush size">
+            <span>Brush</span>
+            <strong>Medium</strong>
+          </div>
+          <div class="zoom-controls" aria-label="Canvas zoom controls">
+            <button class="icon-button" id="zoom-out" type="button" aria-label="Zoom out">−</button>
+            <span class="zoom-readout" id="zoom-readout">100%</span>
+            <button class="icon-button" id="zoom-in" type="button" aria-label="Zoom in">+</button>
+            <button class="secondary-button" id="move-mode" type="button" aria-pressed="false">Move</button>
+          </div>
+          <button class="primary-button" id="restart-button" type="button" hidden>Start again</button>
+        </div>
+        <p class="message" id="phone-message" role="status" aria-live="polite">Draw carefully — a collision clears your color.</p>
+      </section>
+    </section>
+
+    <div class="scoreboard" id="scoreboard" aria-label="Player territory"></div>
+    <p class="footer-note">A shared canvas. A little room for everyone.</p>
+  </main>
+
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    (() => {
+      "use strict";
+
+      const WIDTH = 1200;
+      const HEIGHT = 800;
+      const GRID_WIDTH = 120;
+      const GRID_HEIGHT = 80;
+      const CONNECTION_TIMEOUT_MS = 20000;
+      const BRUSH_SIZE = 18;
+      const PALETTE = [
+        { name: "Terracotta", color: "#c56c42" },
+        { name: "Olive", color: "#718451" },
+        { name: "Ochre", color: "#c89a43" },
+        { name: "Sage", color: "#8b9b79" },
+        { name: "Clay", color: "#ae765b" },
+        { name: "Moss", color: "#657d62" },
+        { name: "Sand", color: "#b49a6a" },
+        { name: "Rust", color: "#a9543e" }
+      ];
+      const urlParams = new URLSearchParams(window.location.search);
+      const hostId = urlParams.get("join");
+      const isPhone = Boolean(hostId);
+      const elements = {
+        hostView: document.getElementById("host-view"),
+        phoneView: document.getElementById("phone-view"),
+        hostCanvas: document.getElementById("host-canvas"),
+        phoneCanvas: document.getElementById("phone-canvas"),
+        previewCanvas: document.getElementById("preview-canvas"),
+        phoneViewport: document.getElementById("phone-viewport"),
+        status: document.getElementById("connection-status"),
+        statusText: document.getElementById("status-text"),
+        reconnect: document.getElementById("reconnect-button"),
+        qrcode: document.getElementById("qrcode"),
+        joinLink: document.getElementById("join-link"),
+        hostMessage: document.getElementById("host-message"),
+        phoneMessage: document.getElementById("phone-message"),
+        scoreboard: document.getElementById("scoreboard"),
+        phoneSwatch: document.getElementById("phone-swatch"),
+        colorName: document.getElementById("color-name"),
+        zoomOut: document.getElementById("zoom-out"),
+        zoomIn: document.getElementById("zoom-in"),
+        zoomReadout: document.getElementById("zoom-readout"),
+        moveMode: document.getElementById("move-mode"),
+        restart: document.getElementById("restart-button")
+      };
+
+      let peer = null;
+      let hostPeerId = null;
+      let playerToken = null;
+      let playerId = null;
+      let playerColor = null;
+      let phoneConnection = null;
+      let phoneConnectionTimer = null;
+      let phoneAlive = true;
+      let gameGrid = new Uint32Array(GRID_WIDTH * GRID_HEIGHT);
+      let hostPlayers = new Map();
+      let hostConnections = new Map();
+      const hostJoinTimers = new WeakMap();
+      let connectionTokens = new WeakMap();
+      const rasterCanvas = document.createElement("canvas");
+      rasterCanvas.width = GRID_WIDTH;
+      rasterCanvas.height = GRID_HEIGHT;
+      const rasterContext = rasterCanvas.getContext("2d");
+      let zoom = 1;
+      let panX = 0;
+      let panY = 0;
+      let movingCanvas = false;
+      let pointerMode = null;
+      let activePoints = [];
+
+      const contexts = {
+        host: elements.hostCanvas.getContext("2d"),
+        phone: elements.phoneCanvas.getContext("2d"),
+        preview: elements.previewCanvas.getContext("2d")
+      };
+
+      function setStatus(state, text) {
+        elements.status.dataset.state = state;
+        elements.statusText.textContent = text;
+      }
+
+      function randomToken() {
+        if (window.crypto && typeof window.crypto.randomUUID === "function") {
+          return window.crypto.randomUUID();
+        }
+        return "p-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      }
+
+      function getPlayerToken() {
+        try {
+          const saved = window.localStorage.getItem("colorit-player-token");
+          if (saved) return saved;
+          const token = randomToken();
+          window.localStorage.setItem("colorit-player-token", token);
+          return token;
+        } catch (error) {
+          return randomToken();
+        }
+      }
+
+      function setCanvasPixels(context, grid, players) {
+        const image = context.createImageData(GRID_WIDTH, GRID_HEIGHT);
+        const colors = new Map();
+        for (const player of players) colors.set(player.id, player.color);
+
+        for (let i = 0; i < grid.length; i += 1) {
+          const color = colors.get(grid[i]);
+          if (!color) continue;
+          const offset = i * 4;
+          image.data[offset] = parseInt(color.slice(1, 3), 16);
+          image.data[offset + 1] = parseInt(color.slice(3, 5), 16);
+          image.data[offset + 2] = parseInt(color.slice(5, 7), 16);
+          image.data[offset + 3] = 255;
+        }
+
+        rasterContext.putImageData(image, 0, 0);
+        context.clearRect(0, 0, WIDTH, HEIGHT);
+        context.imageSmoothingEnabled = false;
+        context.drawImage(rasterCanvas, 0, 0, WIDTH, HEIGHT);
+      }
+
+      function drawHostBoard() {
+        setCanvasPixels(contexts.host, gameGrid, Array.from(hostPlayers.values()));
+        renderScoreboard();
+      }
+
+      function drawPhoneBoard(grid, players) {
+        setCanvasPixels(contexts.phone, grid, players);
+      }
+
+      function renderScoreboard() {
+        const cells = new Map();
+        for (const owner of gameGrid) {
+          if (owner) cells.set(owner, (cells.get(owner) || 0) + 1);
+        }
+        const players = Array.from(hostPlayers.values()).sort((a, b) => {
+          return (cells.get(b.id) || 0) - (cells.get(a.id) || 0);
+        });
+        elements.scoreboard.replaceChildren();
+
+        if (players.length === 0) {
+          const empty = document.createElement("span");
+          empty.className = "player-chip";
+          empty.textContent = "Waiting for artists";
+          elements.scoreboard.append(empty);
+          return;
+        }
+
+        for (const player of players) {
+          const chip = document.createElement("span");
+          chip.className = "player-chip";
+          const swatch = document.createElement("span");
+          swatch.className = "player-swatch";
+          swatch.style.setProperty("--swatch", player.color);
+          const label = document.createElement("span");
+          label.textContent = player.name + (player.connected ? "" : " · away");
+          const score = document.createElement("small");
+          score.textContent = Math.round(((cells.get(player.id) || 0) / gameGrid.length) * 100) + "%";
+          chip.append(swatch, label, score);
+          elements.scoreboard.append(chip);
+        }
+      }
+
+      function updatePhoneTransform() {
+        const canvases = [elements.phoneCanvas, elements.previewCanvas];
+        for (const canvas of canvases) {
+          canvas.style.transform = "translate(" + panX + "px, " + panY + "px) scale(" + zoom + ")";
+        }
+        elements.zoomReadout.textContent = Math.round(zoom * 100) + "%";
+      }
+
+      function setZoom(nextZoom) {
+        zoom = Math.max(1, Math.min(3, nextZoom));
+        if (zoom === 1) {
+          panX = 0;
+          panY = 0;
+        }
+        updatePhoneTransform();
+      }
+
+      function renderQrCode(peerId) {
+        const baseUrl = new URL(window.location.href);
+        baseUrl.search = "";
+        baseUrl.hash = "";
+        const joinUrl = baseUrl.href + "?join=" + encodeURIComponent(peerId);
+        elements.qrcode.replaceChildren();
+        if (window.location.protocol === "file:") {
+          elements.joinLink.hidden = true;
+          elements.qrcode.textContent = "Publish this page to HTTPS to make it reachable from a phone.";
+          elements.hostMessage.textContent = "This local file can’t be opened on your phone. Publish index.html with GitHub Pages, then scan its QR code.";
+          elements.hostMessage.dataset.kind = "error";
+          return;
+        }
+        elements.joinLink.href = joinUrl;
+        elements.joinLink.textContent = joinUrl;
+        elements.joinLink.hidden = false;
+
+        if (typeof window.QRCode === "function") {
+          new window.QRCode(elements.qrcode, {
+            text: joinUrl,
+            width: 152,
+            height: 152,
+            colorDark: "#29271f",
+            colorLight: "#ffffff",
+            correctLevel: window.QRCode.CorrectLevel.M
+          });
+          elements.hostMessage.textContent = "";
+          elements.hostMessage.dataset.kind = "";
+        } else {
+          elements.hostMessage.textContent = "QR code library did not load. Use the join link below instead.";
+          elements.hostMessage.dataset.kind = "error";
+        }
+      }
+
+      function pickColor() {
+        return PALETTE[Math.floor(Math.random() * PALETTE.length)];
+      }
+
+      function broadcastState(event) {
+        const players = Array.from(hostPlayers.values(), player => ({
+          id: player.id,
+          name: player.name,
+          color: player.color,
+          colorName: player.colorName,
+          connected: player.connected,
+          alive: player.alive
+        }));
+        const message = {
+          type: "state",
+          payload: {
+            grid: Array.from(gameGrid),
+            players,
+            event: event || null
+          }
+        };
+        for (const [token, connection] of hostConnections) {
+          if (connection.open) connection.send(message);
+          else {
+            const player = hostPlayers.get(token);
+            if (player) player.connected = false;
+          }
+        }
+        drawHostBoard();
+        updateHostStatus();
+      }
+
+      function updateHostStatus() {
+        const connectedCount = Array.from(hostPlayers.values()).filter(player => player.connected).length;
+        if (connectedCount > 0) {
+          setStatus("connected", connectedCount + (connectedCount === 1 ? " phone connected" : " phones connected"));
+        } else if (hostPeerId) {
+          setStatus("waiting", "Waiting for a phone to join…");
+        }
+      }
+
+      function handleConnectionClose(connection) {
+        const token = connectionTokens.get(connection);
+        if (!token || hostConnections.get(token) !== connection) return;
+        hostConnections.delete(token);
+        const player = hostPlayers.get(token);
+        if (player) player.connected = false;
+        broadcastState();
+      }
+
+      function getOrCreatePlayer(token) {
+        let player = hostPlayers.get(token);
+        if (!player) {
+          const color = pickColor();
+          player = {
+            id: hostPlayers.size + 1,
+            token,
+            name: "Artist " + (hostPlayers.size + 1),
+            color: color.color,
+            colorName: color.name,
+            connected: false,
+            alive: true
+          };
+          hostPlayers.set(token, player);
+        }
+        return player;
+      }
+
+      function sendStateTo(connection, event) {
+        const players = Array.from(hostPlayers.values(), player => ({
+          id: player.id,
+          name: player.name,
+          color: player.color,
+          colorName: player.colorName,
+          connected: player.connected,
+          alive: player.alive
+        }));
+        connection.send({
+          type: "state",
+          payload: { grid: Array.from(gameGrid), players, event: event || null }
+        });
+      }
+
+      function handleHello(connection, payload) {
+        if (!payload || typeof payload.token !== "string" || payload.token.length > 100) return;
+        clearTimeout(hostJoinTimers.get(connection));
+        hostJoinTimers.delete(connection);
+        const token = payload.token;
+        const oldConnection = hostConnections.get(token);
+        if (oldConnection && oldConnection !== connection && oldConnection.open) {
+          oldConnection.close();
+        }
+        connectionTokens.set(connection, token);
+        hostConnections.set(token, connection);
+        const player = getOrCreatePlayer(token);
+        player.connected = true;
+        sendStateTo(connection, {
+          type: "welcome",
+          playerId: player.id,
+          color: player.color,
+          colorName: player.colorName,
+          alive: player.alive
+        });
+        broadcastState();
+      }
+
+      function stamp(x, y, radius, owner) {
+        const minX = Math.max(0, Math.floor(x - radius));
+        const maxX = Math.min(GRID_WIDTH - 1, Math.ceil(x + radius));
+        const minY = Math.max(0, Math.floor(y - radius));
+        const maxY = Math.min(GRID_HEIGHT - 1, Math.ceil(y + radius));
+        const radiusSquared = radius * radius;
+
+        for (let gy = minY; gy <= maxY; gy += 1) {
+          for (let gx = minX; gx <= maxX; gx += 1) {
+            const dx = gx + 0.5 - x;
+            const dy = gy + 0.5 - y;
+            if (dx * dx + dy * dy <= radiusSquared && gameGrid[gy * GRID_WIDTH + gx] !== 0 &&
+                gameGrid[gy * GRID_WIDTH + gx] !== owner) {
+              return false;
+            }
+          }
+        }
+
+        for (let gy = minY; gy <= maxY; gy += 1) {
+          for (let gx = minX; gx <= maxX; gx += 1) {
+            const dx = gx + 0.5 - x;
+            const dy = gy + 0.5 - y;
+            if (dx * dx + dy * dy <= radiusSquared) {
+              gameGrid[gy * GRID_WIDTH + gx] = owner;
+            }
+          }
+        }
+        return true;
+      }
+
+      function applyStroke(player, payload) {
+        if (!player.alive || !Array.isArray(payload.points) || payload.points.length < 1 ||
+            payload.points.length > 3000 || !Number.isFinite(payload.size)) return;
+        const radius = Math.max(0.75, Math.min(6, payload.size * GRID_WIDTH / 2));
+        let previous = null;
+
+        for (const point of payload.points) {
+          if (!Array.isArray(point) || point.length !== 2 ||
+              !Number.isFinite(point[0]) || !Number.isFinite(point[1]) ||
+              point[0] < 0 || point[0] > 1 || point[1] < 0 || point[1] > 1) return;
+        }
+
+        for (const point of payload.points) {
+          const x = point[0] * GRID_WIDTH;
+          const y = point[1] * GRID_HEIGHT;
+          if (!previous) {
+            if (!stamp(x, y, radius, player.id)) {
+              eliminatePlayer(player);
+              return;
+            }
+          } else {
+            const dx = x - previous.x;
+            const dy = y - previous.y;
+            const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) * 1.5));
+            for (let step = 1; step <= steps; step += 1) {
+              const t = step / steps;
+              if (!stamp(previous.x + dx * t, previous.y + dy * t, radius, player.id)) {
+                eliminatePlayer(player);
+                return;
+              }
+            }
+          }
+          previous = { x, y };
+        }
+        broadcastState();
+      }
+
+      function eliminatePlayer(player) {
+        for (let index = 0; index < gameGrid.length; index += 1) {
+          if (gameGrid[index] === player.id) gameGrid[index] = 0;
+        }
+        player.alive = false;
+        broadcastState({
+          type: "lost",
+          playerId: player.id,
+          name: player.name,
+          message: "Collision! Your color has been cleared. Start again when you’re ready."
+        });
+      }
+
+      function restartPlayer(player) {
+        for (let index = 0; index < gameGrid.length; index += 1) {
+          if (gameGrid[index] === player.id) gameGrid[index] = 0;
+        }
+        player.alive = true;
+        broadcastState({
+          type: "restarted",
+          playerId: player.id,
+          name: player.name
+        });
+      }
+
+      function onHostConnection(connection) {
+        hostJoinTimers.set(connection, setTimeout(() => {
+          if (connection.open) return;
+          elements.hostMessage.textContent = "A phone couldn’t establish its WebRTC connection. Check both devices’ internet connections and try again; some networks block direct connections.";
+          elements.hostMessage.dataset.kind = "error";
+        }, CONNECTION_TIMEOUT_MS));
+        connection.on("data", message => {
+          if (!message || typeof message !== "object" || typeof message.type !== "string") return;
+          const payload = message.payload || {};
+          if (message.type === "hello") {
+            handleHello(connection, payload);
+            return;
+          }
+          const token = connectionTokens.get(connection);
+          if (!token || hostConnections.get(token) !== connection) return;
+          const player = hostPlayers.get(token);
+          if (!player) return;
+          if (message.type === "stroke") applyStroke(player, payload);
+          if (message.type === "restart" && !player.alive) restartPlayer(player);
+        });
+        connection.on("close", () => {
+          clearTimeout(hostJoinTimers.get(connection));
+          hostJoinTimers.delete(connection);
+          handleConnectionClose(connection);
+        });
+        connection.on("error", error => {
+          clearTimeout(hostJoinTimers.get(connection));
+          hostJoinTimers.delete(connection);
+          console.error("Phone connection error:", error);
+          elements.hostMessage.textContent = "A phone connection had a problem. It can reconnect from its screen.";
+          elements.hostMessage.dataset.kind = "error";
+        });
+      }
+
+      function startHostPeer() {
+        if (typeof window.Peer !== "function") {
+          setStatus("disconnected", "PeerJS could not load. Check your connection and reload.");
+          elements.hostMessage.textContent = "The connection library did not load.";
+          elements.hostMessage.dataset.kind = "error";
+          return;
+        }
+        hostPeerId = null;
+        setStatus("waiting", "Starting your shared canvas…");
+        const nextPeer = new window.Peer();
+        peer = nextPeer;
+        nextPeer.on("open", id => {
+          if (peer !== nextPeer) return;
+          hostPeerId = id;
+          renderQrCode(id);
+          updateHostStatus();
+        });
+        nextPeer.on("connection", onHostConnection);
+        nextPeer.on("disconnected", () => {
+          if (peer !== nextPeer) return;
+          setStatus("disconnected", "Connection paused. Reconnect to restore your join code.");
+          elements.hostMessage.textContent = "The signaling connection paused. Your current board is still on this screen.";
+          elements.hostMessage.dataset.kind = "error";
+        });
+        nextPeer.on("error", error => {
+          if (peer !== nextPeer) return;
+          console.error("PeerJS host error:", error);
+          setStatus("disconnected", "Could not connect. Try reconnecting.");
+          elements.hostMessage.textContent = "Connection error: " + error.type + ".";
+          elements.hostMessage.dataset.kind = "error";
+        });
+      }
+
+      function handleState(payload) {
+        if (!payload || !Array.isArray(payload.grid) || payload.grid.length !== GRID_WIDTH * GRID_HEIGHT ||
+            !Array.isArray(payload.players)) return;
+        const event = payload.event;
+        if (event && event.type === "welcome" && Number.isInteger(event.playerId)) {
+          playerId = event.playerId;
+          playerColor = event.color;
+        }
+        const validPlayers = payload.players.filter(player =>
+          Number.isInteger(player.id) && typeof player.color === "string" &&
+          /^#[0-9a-f]{6}$/i.test(player.color)
+        );
+        gameGrid = Uint32Array.from(payload.grid, value =>
+          Number.isInteger(value) && value >= 0 && value <= 4294967295 ? value : 0
+        );
+        drawPhoneBoard(gameGrid, validPlayers);
+        const ownPlayer = validPlayers.find(player => player.id === playerId);
+        if (ownPlayer) {
+          playerColor = ownPlayer.color;
+          phoneAlive = ownPlayer.alive !== false;
+          elements.phoneSwatch.style.setProperty("--swatch", playerColor);
+          elements.colorName.textContent = ownPlayer.colorName || "Your color";
+          elements.restart.hidden = phoneAlive;
+        }
+        contexts.preview.clearRect(0, 0, WIDTH, HEIGHT);
+        renderPhoneStatus(validPlayers);
+        if (event && event.playerId === playerId && event.type === "lost") {
+          elements.phoneMessage.textContent = event.message;
+          elements.phoneMessage.dataset.kind = "error";
+        } else if (event && event.playerId === playerId && event.type === "restarted") {
+          elements.phoneMessage.textContent = "Fresh start. Find an open space and make your mark.";
+          elements.phoneMessage.dataset.kind = "";
+        } else if (ownPlayer && !phoneAlive) {
+          elements.phoneMessage.textContent = "Your color was cleared. Start again whenever you’re ready.";
+          elements.phoneMessage.dataset.kind = "error";
+        } else if (ownPlayer) {
+          elements.phoneMessage.textContent = "Draw carefully — a collision clears your color.";
+          elements.phoneMessage.dataset.kind = "";
+        }
+      }
+
+      function renderPhoneStatus(players) {
+        const connectedCount = players.filter(player => player.connected).length;
+        if (phoneConnection && phoneConnection.open) {
+          setStatus("connected", "Connected to the shared canvas");
+        } else {
+          setStatus("waiting", "Connecting to the computer…");
+        }
+      }
+
+      function createPhonePeer() {
+        if (typeof window.Peer !== "function") {
+          setStatus("disconnected", "PeerJS could not load. Check your connection.");
+          return;
+        }
+        const nextPeer = new window.Peer();
+        peer = nextPeer;
+        nextPeer.on("open", () => {
+          if (peer === nextPeer) connectPhone();
+        });
+        nextPeer.on("disconnected", () => {
+          if (peer === nextPeer) setStatus("disconnected", "Connection paused. Tap Reconnect to restore it.");
+        });
+        nextPeer.on("error", error => {
+          if (peer !== nextPeer) return;
+          console.error("PeerJS phone error:", error);
+          setStatus("disconnected", "Could not connect. Check the join link and retry.");
+          elements.phoneMessage.textContent = "Connection error: " + error.type + ".";
+          elements.phoneMessage.dataset.kind = "error";
+        });
+      }
+
+      function connectPhone() {
+        if (!peer || peer.destroyed) {
+          createPhonePeer();
+          return;
+        }
+        if (!peer.open) {
+          setStatus("waiting", "Starting phone connection…");
+          return;
+        }
+        if (phoneConnection) {
+          clearTimeout(phoneConnectionTimer);
+          phoneConnection.removeAllListeners();
+          phoneConnection.close();
+        }
+        setStatus("waiting", "Connecting to the computer…");
+        const connection = peer.connect(hostId, { reliable: true });
+        phoneConnection = connection;
+        phoneConnectionTimer = setTimeout(() => {
+          if (phoneConnection !== connection || connection.open) return;
+          setStatus("disconnected", "Couldn’t establish a WebRTC connection. Tap Reconnect to retry.");
+          elements.phoneMessage.textContent = "Check that both devices are online and try again. Some networks block direct peer connections.";
+          elements.phoneMessage.dataset.kind = "error";
+        }, CONNECTION_TIMEOUT_MS);
+        connection.on("open", () => {
+          if (phoneConnection !== connection) return;
+          clearTimeout(phoneConnectionTimer);
+          connection.send({ type: "hello", payload: { token: playerToken } });
+          setStatus("connected", "Connected to the shared canvas");
+        });
+        connection.on("data", message => {
+          if (phoneConnection !== connection || !message || typeof message !== "object") return;
+          if (message.type === "state") handleState(message.payload);
+        });
+        connection.on("close", () => {
+          if (phoneConnection !== connection) return;
+          clearTimeout(phoneConnectionTimer);
+          setStatus("disconnected", "Disconnected. Tap Reconnect to try again.");
+          elements.phoneMessage.textContent = "Connection lost. Your last saved color stays on the board.";
+          elements.phoneMessage.dataset.kind = "error";
+          contexts.preview.clearRect(0, 0, WIDTH, HEIGHT);
+        });
+        connection.on("error", error => {
+          clearTimeout(phoneConnectionTimer);
+          console.error("Phone data connection error:", error);
+          setStatus("disconnected", "Could not connect. Tap Reconnect to retry.");
+          elements.phoneMessage.textContent = "Connection error. Check that the computer is still online.";
+          elements.phoneMessage.dataset.kind = "error";
+        });
+      }
+
+      function pointFromEvent(event) {
+        const rect = elements.phoneCanvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return null;
+        return {
+          x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
+          y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height))
+        };
+      }
+
+      function drawPreview(points) {
+        if (!playerColor || points.length === 0) return;
+        const rect = elements.phoneCanvas.getBoundingClientRect();
+        const lineWidth = (BRUSH_SIZE / Math.max(1, rect.width)) * WIDTH;
+        const context = contexts.preview;
+        context.clearRect(0, 0, WIDTH, HEIGHT);
+        context.beginPath();
+        context.moveTo(points[0][0] * WIDTH, points[0][1] * HEIGHT);
+        for (let index = 1; index < points.length; index += 1) {
+          context.lineTo(points[index][0] * WIDTH, points[index][1] * HEIGHT);
+        }
+        context.strokeStyle = playerColor;
+        context.lineWidth = lineWidth;
+        context.lineCap = "round";
+        context.lineJoin = "round";
+        if (points.length === 1) {
+          context.lineTo(points[0][0] * WIDTH + 0.01, points[0][1] * HEIGHT + 0.01);
+        }
+        context.stroke();
+      }
+
+      function onDrawPointerDown(event) {
+        if (!isPhone || movingCanvas || !phoneConnection || !phoneConnection.open || !phoneAlive) return;
+        const point = pointFromEvent(event);
+        if (!point) return;
+        pointerMode = "draw";
+        activePoints = [[point.x, point.y]];
+        elements.phoneCanvas.setPointerCapture(event.pointerId);
+        drawPreview(activePoints);
+        event.preventDefault();
+      }
+
+      function onDrawPointerMove(event) {
+        if (!pointerMode) return;
+        if (typeof pointerMode === "object" && pointerMode.mode === "move") {
+          panX += event.clientX - pointerMode.lastX;
+          panY += event.clientY - pointerMode.lastY;
+          pointerMode.lastX = event.clientX;
+          pointerMode.lastY = event.clientY;
+          updatePhoneTransform();
+          event.preventDefault();
+          return;
+        }
+        const point = pointFromEvent(event);
+        if (!point) return;
+        const previous = activePoints[activePoints.length - 1];
+        if (Math.hypot(point.x - previous[0], point.y - previous[1]) < 0.0007) return;
+        activePoints.push([point.x, point.y]);
+        drawPreview(activePoints);
+        event.preventDefault();
+      }
+
+      function onDrawPointerUp(event) {
+        if (!pointerMode) return;
+        const mode = pointerMode;
+        pointerMode = null;
+        if (elements.phoneCanvas.hasPointerCapture(event.pointerId)) {
+          elements.phoneCanvas.releasePointerCapture(event.pointerId);
+        }
+        if (mode === "move") return;
+        if (mode && typeof mode === "object" && mode.mode === "move") return;
+        if (!phoneConnection || !phoneConnection.open || !phoneAlive) {
+          contexts.preview.clearRect(0, 0, WIDTH, HEIGHT);
+          activePoints = [];
+          return;
+        }
+        const rect = elements.phoneCanvas.getBoundingClientRect();
+        const size = BRUSH_SIZE / Math.max(1, rect.width);
+        phoneConnection.send({
+          type: "stroke",
+          payload: { points: activePoints, size }
+        });
+        activePoints = [];
+      }
+
+      function initializeHost() {
+        elements.hostView.hidden = false;
+        elements.hostCanvas.addEventListener("contextmenu", event => event.preventDefault());
+        drawHostBoard();
+        startHostPeer();
+        elements.reconnect.addEventListener("click", () => {
+          if (peer && !peer.destroyed && peer.disconnected) {
+            setStatus("waiting", "Reconnecting to the game…");
+            peer.reconnect();
+            return;
+          }
+          if (peer && !peer.destroyed) peer.destroy();
+          hostPlayers.forEach(player => { player.connected = false; });
+          hostConnections.clear();
+          startHostPeer();
+        });
+      }
+
+      function initializePhone() {
+        elements.phoneView.hidden = false;
+        playerToken = getPlayerToken();
+        updatePhoneTransform();
+        elements.reconnect.addEventListener("click", () => {
+          if (peer && !peer.destroyed && peer.disconnected) {
+            peer.reconnect();
+            setStatus("waiting", "Reconnecting to the game…");
+          } else {
+            connectPhone();
+          }
+        });
+        elements.zoomIn.addEventListener("click", () => setZoom(zoom + 0.25));
+        elements.zoomOut.addEventListener("click", () => setZoom(zoom - 0.25));
+        elements.moveMode.addEventListener("click", () => {
+          movingCanvas = !movingCanvas;
+          elements.moveMode.setAttribute("aria-pressed", String(movingCanvas));
+          elements.moveMode.textContent = movingCanvas ? "Draw" : "Move";
+          elements.phoneMessage.textContent = movingCanvas
+            ? "Drag the canvas to move around, then switch back to draw."
+            : "Draw carefully — a collision clears your color.";
+        });
+        elements.restart.addEventListener("click", () => {
+          if (!phoneConnection || !phoneConnection.open) {
+            elements.phoneMessage.textContent = "Reconnect before starting again.";
+            elements.phoneMessage.dataset.kind = "error";
+            return;
+          }
+          phoneConnection.send({ type: "restart", payload: {} });
+          elements.restart.hidden = true;
+        });
+        elements.phoneCanvas.addEventListener("pointerdown", event => {
+          if (movingCanvas) {
+            pointerMode = { mode: "move", lastX: event.clientX, lastY: event.clientY };
+            elements.phoneCanvas.setPointerCapture(event.pointerId);
+            event.preventDefault();
+          } else {
+            onDrawPointerDown(event);
+          }
+        });
+        elements.phoneCanvas.addEventListener("pointermove", onDrawPointerMove);
+        elements.phoneCanvas.addEventListener("pointerup", onDrawPointerUp);
+        elements.phoneCanvas.addEventListener("pointercancel", onDrawPointerUp);
+        connectPhone();
+      }
+
+      if (isPhone) initializePhone();
+      else initializeHost();
+    })();
+  </script>
+</body>
+</html>
